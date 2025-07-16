@@ -1,0 +1,9 @@
+ragproject/
+├── .env                # Environment variables for configuration (you need to create this)
+├── app.py              # Streamlit application entry point.
+├── main.py             # Main application entry point. Handles the chat loop, and orchestrates memory retrieval and response generation.
+├── memory_store.py     # Manages the FAISS vector store for conversation summaries.
+├── summarize.py        # Contains the logic for summarizing the chat history.
+├── requirements.txt    # Lists the Python dependencies for the project.
+├── structure.txt       # This file 
+└── README.md           # Project documentation 
