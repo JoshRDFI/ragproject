@@ -30,8 +30,8 @@ The chatbot's memory and response generation process follows these steps:
 
 1.  **Clone the repository:**
     ```bash
-    git clone <repository-url>
-    cd <repository-folder>
+    git clone https://github.com/JoshRDFI/ragproject
+    cd <repository-folder -- where you saved it>
     ```
 
 2.  **Create a virtual environment:**
