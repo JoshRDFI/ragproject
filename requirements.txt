@@ -1,5 +1,8 @@
 langchain
 langchain-community
-python-dotenv
+langchain-ollama
 faiss-cpu
 streamlit
+python-dotenv
+langchain-experimental
+transformers>=4.41.0  # required for token counting by LangChain

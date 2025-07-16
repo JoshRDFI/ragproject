@@ -4,16 +4,26 @@ This project demonstrates a simple Retrieval-Augmented Generation (RAG) chatbot 
 
 This chatbot can be run as a command-line application or as a web-based interface using Streamlit.
 
+## Features
+
+*   **Persistent Memory**: Conversations are saved and reloaded across sessions, ensuring the chatbot remembers past interactions.
+*   **Structured Summaries**: Summaries of conversations include timestamps, topics, and key conclusions for better context and searchability.
+*   **Multiple Vector Stores**: The chatbot can manage separate vector stores for different topics, allowing for more organized and efficient memory retrieval.
+*   **Advanced Retrieval**: A hybrid search approach combining semantic and keyword search is implemented for more accurate retrieval of memories.
+*   **Memory Compression**: Hierarchical summarization is used to compress older memories, keeping the long-term memory concise and relevant.
+*   **LangChain Integration**: Built with LangChain for robust and scalable memory management and agent integration.
+*   **Local First**: Runs entirely on your local machine with Ollama, ensuring privacy and control over your data.
+
 ## How It Works
 
 The chatbot's memory and response generation process follows these steps:
 
 1.  **User Input**: The application takes user input from either the command line or a web interface.
-2.  **Memory Retrieval**: The user's input is used to query a FAISS vector store. The store contains summaries of past parts of the conversation. The most relevant summaries are retrieved using a dedicated embedding model.
+2.  **Memory Retrieval**: The user's input is used to query multiple FAISS vector stores using a hybrid search (semantic + keyword). The stores contain structured summaries of past parts of the conversation. The most relevant summaries are retrieved using a dedicated embedding model.
 3.  **Prompt Construction**: A prompt is constructed for the language model. This prompt includes an optional system prompt, the retrieved summaries (long-term memory), and the most recent conversation turns (short-term memory).
 4.  **Response Generation**: The constructed prompt is sent to a local language model served by Ollama (e.g., Qwen3, Llama 2, Mistral) to generate a response.
-5.  **Memory Consolidation**: After every few turns (currently 3), the conversation history is summarized by the language model.
-6.  **Memory Storage**: The generated summary is converted into a vector embedding using a dedicated embedding model and stored in the FAISS vector store for future retrieval.
+5.  **Memory Consolidation**: After every few turns (currently 3), the conversation history is summarized by the language model. The summary is enriched with a timestamp, extracted topics, and key conclusions.
+6.  **Memory Storage**: The generated summary is converted into a vector embedding and stored in the appropriate FAISS vector store based on its topic for future retrieval. The vector stores are persisted to disk.
 7.  **Chat History**: The full conversation history is tracked, while the recent chat history buffer is cleared after each summarization to manage context length.
 
 ## Setup and Running
@@ -22,6 +32,7 @@ The chatbot's memory and response generation process follows these steps:
 
 *   [Python 3.8+](https://www.python.org/downloads/)
 *   [Ollama](https://ollama.com/) installed and running.
+*   **Note on GPU Acceleration**: For GPU acceleration with Ollama, it is recommended to run the application and the Python virtual environment under Linux. The Windows version of Ollama does not currently support GPU acceleration.
 *   Two models pulled via Ollama:
     *   A chat model (e.g., `ollama pull qwen2.5`)
     *   An embedding model (e.g., `ollama pull nomic-embed-text`)
@@ -77,8 +88,10 @@ The chatbot's memory and response generation process follows these steps:
 ├── main.py             # Command-line application entry point.
 ├── memory_store.py     # Manages the FAISS vector store for conversation summaries.
 ├── summarize.py        # Contains the logic for summarizing the chat history.
+├── langchain_memory.py # Demonstrates advanced memory management with LangChain.
 ├── requirements.txt    # Lists the Python dependencies for the project.
 ├── structure.txt       # Describes the project structure.
+├── vector_stores/      # Directory to store the persisted FAISS vector stores.
 └── README.md           # This file.
 ```
 

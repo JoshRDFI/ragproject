@@ -4,6 +4,7 @@ ragproject/
 ├── main.py             # Main application entry point. Handles the chat loop, and orchestrates memory retrieval and response generation.
 ├── memory_store.py     # Manages the FAISS vector store for conversation summaries.
 ├── summarize.py        # Contains the logic for summarizing the chat history.
+├── langchain_memory.py # Demonstrates advanced memory management with LangChain.
 ├── requirements.txt    # Lists the Python dependencies for the project.
 ├── structure.txt       # This file 
 └── README.md           # Project documentation 

@@ -1,54 +1,56 @@
-from summarize import summarize_chat
-from memory_store import create_vector_store, add_to_memory, retrieve_memory
-import readline  # enables history in CLI
+import readline
 import os
 from dotenv import load_dotenv
-from langchain.chat_models import ChatOllama
-from langchain.schema import SystemMessage, HumanMessage
+from memory_store import get_or_create_vector_store, add_to_memory, hybrid_search
+from summarize import summarize_chat
+from langchain_memory import EnhancedRAGMemory
 
 load_dotenv()
 
-llm = ChatOllama(model=os.getenv("MODEL_NAME"))
-
-def build_prompt(context: str, recent: list[str]) -> str:
-    return f"Context from memory:\n{context}\n\nRecent chat:\n" + "\n".join(recent)
+def build_prompt(vector_context: str, enhanced_context: str, recent: list[str]) -> str:
+    prompt = """You are a helpful assistant.\n\n"""
+    if vector_context:
+        prompt += f"Relevant memory:\n{vector_context}\n\n"
+    if enhanced_context:
+        prompt += f"Conversation summary:\n{enhanced_context}\n\n"
+    if recent:
+        prompt += "Recent chat:\n" + "\n".join(recent) + "\n\n"
+    prompt += "Answer the user's question based on the above."
+    return prompt
 
 def main():
-    vector_store = create_vector_store()
+    print("--- RAG Chatbot with Enhanced Memory ---")
+    print("Type 'exit' to quit.\n")
+    topic = input("Enter topic for this session (default: 'general'): ").strip() or "general"
+    vector_store = get_or_create_vector_store(topic)
+    memory_system = EnhancedRAGMemory()
     full_history = []
     recent_chat = []
-
-    print("🧠 LLM with RAG memory. Type 'exit' to quit.\n")
-
+    turn = 0
     while True:
         user_input = input("You: ")
-        if user_input.lower() == "exit":
+        if user_input.strip().lower() == "exit":
+            print("Exiting chat.")
             break
-
-        full_history.append(f"User: {user_input}")
-        recent_chat.append(f"User: {user_input}")
-
-        # Step 1: retrieve memory
-        retrieved = retrieve_memory(vector_store, user_input)
-        memory_context = "\n".join([d.page_content for d in retrieved]) if retrieved else "None"
-
-        # Step 2: build prompt
-        messages = [
-            SystemMessage(content="You are a helpful assistant."),
-            HumanMessage(content=build_prompt(memory_context, recent_chat))
-        ]
-
-        response = llm(messages).content
-        print(f"AI: {response}")
-
-        full_history.append(f"AI: {response}")
-        recent_chat.append(f"AI: {response}")
-
-        # Step 3: summarize occasionally
-        if len(full_history) % 6 == 0:  # summarize every 3 turns
+        # Hybrid search from vector DB
+        retrieved = hybrid_search(vector_store, user_input)
+        vector_context = "\n".join([d.page_content for d in retrieved]) if retrieved else ""
+        # Get enhanced memory context (summary)
+        enhanced_context = memory_system.summary_memory.buffer_as_str if hasattr(memory_system.summary_memory, 'buffer_as_str') else ""
+        # Build prompt
+        prompt = build_prompt(vector_context, enhanced_context, recent_chat)
+        # Get response from EnhancedRAGMemory (uses its own chain)
+        response = memory_system.chat(user_input)
+        print(f"Bot: {response}\n")
+        # Update histories
+        full_history.append(f"User: {user_input}\nAssistant: {response}")
+        recent_chat.append(f"User: {user_input}\nAssistant: {response}")
+        # Periodically summarize and store in vector DB
+        turn += 1
+        if turn % 3 == 0:
             summary = summarize_chat(full_history)
-            add_to_memory(vector_store, summary)
-            recent_chat = []  # reset buffer
+            add_to_memory(vector_store, summary, metadata={"topic": topic})
+            recent_chat = []
 
 if __name__ == "__main__":
     main()
